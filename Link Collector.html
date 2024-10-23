@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Collector</title>
+    <style>
+         body {
+             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+             direction: ltr;
+             text-align: left;
+             background-color: #0d0d0d;
+             color: #e0e0e0;
+             padding: 20px;
+         }
+         h1 {
+             color: #ffffff;
+             text-align: center;
+         }
+         form {
+             margin-bottom: 20px;
+         }
+         input, textarea {
+             width: 100%;
+             padding: 15px 10px; /* زيادة الحشوة */
+             margin: 10px 0;
+             border: 2px solid #03a9f4;
+             border-radius: 10px; /* زوايا مستديرة */
+             background-color: #1e1e1e;
+             color: #e0e0e0;
+             font-size: 16px;
+             transition: background-color 0.3s;
+         }
+         input:focus, textarea:focus {
+             background-color: #2a2a2a;
+             outline: none;
+             border-color: #03a9f4; /* تغيير لون الإطار عند التركيز */
+         }
+         button {
+             background-color: #007BFF;
+             color: white;
+             padding: 10px 20px;
+             border: none;
+             border-radius: 5px;
+             cursor: pointer;
+             transition: background-color 0.3s;
+         }
+         button:hover {
+             background-color: #0056b3;
+         }
+         .search-box {
+             margin: 20px auto; /* توسيط مربع البحث */
+             width: 50%; /* عرض مربع البحث */
+         }
+         .search-box input {
+             width: 100%;
+             padding: 15px 5px; /* تعديل حشوة مربع البحث */
+             border: 2px solid #03a9f4; /* لون إطار مربع البحث */
+             border-radius: 20px; /* زوايا مستديرة */
+             background-color: #333; /* لون خلفية مربع البحث */
+             color: #ffffff; /* لون نص مربع البحث */
+             font-size: 16px; /* حجم خط نص مربع البحث */
+             outline: none; /* إزالة حدود التركيز */
+             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل مربع البحث */
+             transition: border-color 0.3s ease, background-color 0.3s ease; /* تأثير الانتقال */
+         }
+         .search-box input:focus {
+             border-color: #03a9f4; /* تغيير لون الإطار عند التركيز */
+             background-color: #444; /* تغيير لون الخلفية عند التركيز */
+         }
+         .link-list {
+             margin-top: 20px;
+         }
+         .link-item {
+             background-color: #1e1e1e;
+             padding: 15px;
+             margin-bottom: 10px;
+             border-radius: 5px;
+              border: 2px solid #03a9f4;
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+         }
+         .link-item a {
+             color: #007BFF;
+             text-decoration: none;
+         }
+         .link-item a:hover {
+             text-decoration: underline;
+         }
+         .edit-button, .delete-button {
+             background-color: #ffc107;
+             color: white;
+             border: none;
+             padding: 5px 10px;
+             border-radius: 5px;
+             cursor: pointer;
+             transition: background-color 0.3s;
+         }
+         .edit-button:hover {
+             background-color: #e0a800;
+         }
+         .delete-button {
+             background-color: #dc3545;
+         }
+         .delete-button:hover {
+             background-color: #c82333;
+         }
+     </style>
+</head>
+<body>
+
+    <h1>Link Collector</h1>
+    <div class="search-box">
+        <input type="text" id="searchQuery" placeholder="Search links" oninput="searchLinks()"> <!-- البحث التلقائي -->
+    </div>
+
+    <form id="linkForm">
+        <input type="text" id="linkUrl" placeholder="Enter the link" required>
+        <textarea id="linkDescription" rows="4" placeholder="Enter a description for the link" required></textarea>
+        <button type="submit">Add Link</button>
+    </form>
+
+    <div class="link-list" id="linkList">
+        <!-- Links will be added here -->
+    </div>
+
+    <script>
+        let currentIndex = -1; // To track the index of the link being edited
+
+        // Load links from localStorage on page load
+        document.addEventListener('DOMContentLoaded', loadLinks);
+
+        document.getElementById('linkForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const linkUrl = document.getElementById('linkUrl').value;
+            const linkDescription = document.getElementById('linkDescription').value;
+
+            if (linkUrl && linkDescription) {
+                const linkData = {
+                    url: linkUrl,
+                    description: linkDescription
+                };
+
+                if (currentIndex >= 0) {
+                    // If editing an existing link
+                    updateLinkInStorage(currentIndex, linkData);
+                } else {
+                    // Add new link
+                    addLinkToStorage(linkData);
+                }
+
+                // Clear fields
+                document.getElementById('linkUrl').value = '';
+                document.getElementById('linkDescription').value = '';
+                currentIndex = -1; // Reset edit index
+            }
+        });
+
+        function addLinkToStorage(linkData) {
+            const links = JSON.parse(localStorage.getItem('links')) || [];
+            links.push(linkData);
+            localStorage.setItem('links', JSON.stringify(links));
+            loadLinks(); // Refresh link list
+        }
+
+        function updateLinkInStorage(index, linkData) {
+            const links = JSON.parse(localStorage.getItem('links')) || [];
+            links[index] = linkData; // Update link data
+            localStorage.setItem('links', JSON.stringify(links));
+            loadLinks(); // Refresh link list
+        }
+
+        function loadLinks() {
+            const links = JSON.parse(localStorage.getItem('links')) || [];
+            const linkList = document.getElementById('linkList');
+            linkList.innerHTML = ''; // Clear existing links
+
+            links.forEach((link, index) => {
+                const linkItem = document.createElement('div');
+                linkItem.classList.add('link-item');
+
+                const linkElement = document.createElement('a');
+                linkElement.href = link.url;
+                linkElement.target = '_blank';
+                linkElement.textContent = link.description;
+
+                const buttonContainer = document.createElement('div'); // حاوية للأزرار
+                buttonContainer.style.display = 'flex'; // جعل الأزرار في صف واحد
+                buttonContainer.style.gap = '10px'; // مسافة بين الأزرار
+
+                const editButton = document.createElement('button');
+                editButton.classList.add('edit-button');
+                editButton.textContent = 'Edit';
+                editButton.onclick = () => editLink(index);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteLink(index);
+
+                buttonContainer.appendChild(editButton);
+                buttonContainer.appendChild(deleteButton);
+
+                linkItem.appendChild(linkElement);
+                linkItem.appendChild(buttonContainer); // إضافة حاوية الأزرار
+                linkList.appendChild(linkItem);
+            });
+        }
+
+        function editLink(index) {
+            const links = JSON.parse(localStorage.getItem('links'));
+            document.getElementById('linkUrl').value = links[index].url;
+            document.getElementById('linkDescription').value = links[index].description;
+            currentIndex = index; // Set current index for editing
+        }
+
+        function deleteLink(index) {
+            const links = JSON.parse(localStorage.getItem('links')) || [];
+            links.splice(index, 1); // Remove link at index
+            localStorage.setItem('links', JSON.stringify(links));
+            loadLinks(); // Refresh link list
+        }
+
+        function searchLinks() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const links = JSON.parse(localStorage.getItem('links')) || [];
+            const linkList = document.getElementById('linkList');
+            linkList.innerHTML = ''; // Clear existing links
+
+            links.forEach((link, index) => {
+                if (link.description.toLowerCase().includes(query)) {
+                    const linkItem = document.createElement('div');
+                    linkItem.classList.add('link-item');
+
+                    const linkElement = document.createElement('a');
+                    linkElement.href = link.url;
+                    linkElement.target = '_blank';
+                    linkElement.textContent = link.description;
+
+                    const buttonContainer = document.createElement('div'); // حاوية للأزرار
+                    buttonContainer.style.display = 'flex'; // جعل الأزرار في صف واحد
+                    buttonContainer.style.gap = '10px'; // مسافة بين الأزرار
+
+                    const editButton = document.createElement('button');
+                    editButton.classList.add('edit-button');
+                    editButton.textContent = 'Edit';
+                    editButton.onclick = () => editLink(index);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('delete-button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => deleteLink(index);
+
+                    buttonContainer.appendChild(editButton);
+                    buttonContainer.appendChild(deleteButton);
+
+                    linkItem.appendChild(linkElement);
+                    linkItem.appendChild(buttonContainer); // إضافة حاوية الأزرار
+                    linkList.appendChild(linkItem);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
